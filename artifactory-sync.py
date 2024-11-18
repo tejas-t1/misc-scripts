@@ -20,6 +20,6 @@ for i in missing:
                 "source_package_name": source_package_name,
                 "source_package_version": source_package_version,
             },
-            auth=('sys_adoadd', "11a813832f4286c1fbbb672b793a077915"),
+            auth=('sys_adoadd', "<TOKEN"),
         )
     response.raise_for_status()
