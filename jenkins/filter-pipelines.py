@@ -242,36 +242,65 @@ zoom-automation-release
 """
 
 reposToUpdate = """
-suite-definition
-enact-service
-packaging-service
-three-d-mark
-command-wrapper
-autostress
-teams-automation
-youtube-automation
-display-automation
-zoom-automation
-meshcommander-automation
-connectivity-tools-automation
-audacity-automation
-storage-automation
-thermal-tools-automation
-manageability-tools-automation
-debug-tools-automation
-overclocking-tools-automation
-selenium-automation
-automation-architecture
-cloud-client-automation
-rails-shared
-google-meet-automation
+rails-enact
+rails-core
+rails-tc-template
+rails-dsl-template
+presilicon
+pat
+pat-content
+moreutils
+wmp-automation
+services-deployments
+vaultio
+vault-server
+twsapi
+pywevtutil
+pycst
+test-automation-library-template
+pycst-backend
+awesome-automation-libraries
+tuning-wizard-automation
+endurance-gaming
+hgsplus-workload-automation
+hgs-emulator-validation-automation
+camera-driver-automation
+systemscope-python
+hammock-harbor-tool-automation
+watch-dog-timer-automation
+visual-processing-unit-automation
+audio-tools-automation
+sdr-python
+mep-classifier-service
+cps-dtt-test-content
+microsoft-effect-package-automation
+ipf-python-client
+rails-test-content-template
+io-margining-automation
+vaad-tools-automation
+pnputil-powershell-automation
+security-ipf-automation
+tcss-debug-tool
+power-automation
+prst-automation
+audio-quality-classifier
+wheel-package-pipeline
+wse-bronze-test-content
+recovery
+rails-init-tc
+onebox-api-wrapper
+recovery-tc
+video-quality-classifier
+rails
 """
 
 allPipelnesList = allPipelines.split()
 # print(allPipelnesList)
 reposToUpdateList = reposToUpdate.split()
 # print(reposToUpdateList)
+notfound =()
 for repos in reposToUpdateList:
     for pipeline in allPipelnesList:
         if repos in pipeline:
             print(pipeline)
+# print(notfound)
