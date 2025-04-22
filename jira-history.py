@@ -38,10 +38,14 @@ def summarize_contributions(feed_url: str, access_token) -> Dict[str, List[Summa
         link = entry.link
 
         # Create a Summary object
+        # Extract the full content if available, otherwise use summary
+        full_content = getattr(entry, 'content', [{'value': summary_text}])[0]['value'] if hasattr(entry, 'content') else summary_text
+        full_content = BeautifulSoup(full_content, 'html.parser').get_text()
+        
         summary = Summary(
             title=title,
             published=published,
-            summary=summary_text,
+            summary=full_content,
             link=link
         )
 
@@ -59,8 +63,8 @@ def getUrl(user, from_date) -> str:
     return feed_url
 
 # URL of the Jira Atom feed (replace with your actual Jira Atom feed URL)
-feed_url = getUrl(user="tejast", from_date=int(datetime(2024, 9, 15).timestamp() * 1000))
-jira_token = access_token = "<>"
+feed_url = getUrl(user="tejast", from_date=int(datetime(2025, 1, 1).timestamp() * 1000))
+jira_token = access_token = ""
 # Get the summaries of contributions
 contributions_summaries = summarize_contributions(feed_url, jira_token)
 
@@ -81,4 +85,4 @@ def writeCsv(path: str, contributions_summaries: Dict[str, List[Summary]]):
                 writer.writerow([indexj+1,link, index + 1, summary.title, summary.published, summary.summary])
             writer.writerow([""]*6)
 
-writeCsv(r"C:\Users\tejast\Downloads\Q4JiraTejas.csv", contributions_summaries)
+writeCsv(r"C:\Users\tejast\Downloads\Q1JiraTejas.csv", contributions_summaries)
