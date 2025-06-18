@@ -35,26 +35,26 @@ class Logger:
     
     def info(self, message):
         self.logger.info(message)
-        cprint(message, "cyan")
+        # cprint(message, "cyan")
         
     def debug(self, message):
         self.logger.debug(message)
         
     def error(self, message):
         self.logger.error(message)
-        cprint(message, "red")
+        # cprint(message, "red")
         
     def warning(self, message):
         self.logger.warning(message)
-        cprint(message, "yellow")
+        # cprint(message, "yellow")
         
     def success(self, message):
         self.logger.info(message)
-        cprint(message, "green")
+        # cprint(message, "green")
         
     def highlight(self, message):
         self.logger.info(message)
-        cprint(message, "yellow", attrs=["bold"])
+        # cprint(message, "yellow", attrs=["bold"])
 
 
 class CredentialManager:
@@ -118,6 +118,8 @@ class InspectToolDependency:
         toolDeps, _ = self.aggregateDependencies(className)
         self.logger.success(f"Found {len(toolDeps)} tool dependencies")
         return toolDeps
+
+
 
 
 class NGAApiHandler:
@@ -190,30 +192,46 @@ class TestLineUpdater:
     
     def update_test_lines(self, rails_cases, test_line_mapping, param_id_map):
         self.logger.highlight(f"Processing {len(rails_cases)} Rails cases")
-        
+        tool_dep_handler = InspectToolDependency(scanModuleName='rails.nga_cases', logger=self.logger)
+        tool_dep_handler.discoverCases()
         for idx, case in enumerate(rails_cases):
             metadata = case.metadata
+            self.logger.debug(f"Case metadata: {metadata}")
+            
             case_id = metadata.case_id
+            self.logger.info(f"Case ID: {case_id}")
+            
             title = metadata.description
+            self.logger.info(f"Case title: {title}")
+            
             domain = metadata.domain
+            self.logger.info(f"Case domain: {domain}")
+            
+            tooldeps = tool_dep_handler.getToolDependenciesFromCaseId(case_id)
+            self.logger.info(f"Tool dependencies: {tooldeps}")
             
             self.logger.info(f"Processing case {idx+1}/{len(rails_cases)}: {case_id}")
-            
+            # break
             test_line = test_line_mapping.get(case_id, None)
             
+
+
             if test_line:
+
                 self.logger.success(f"Found test line for case ID: {case_id}")
                 self.logger.info(f"Before update - Parameters: {test_line.Parameters}")
                 
                 case_identifier_param_id = param_id_map['case_identifier']
                 case_domain_param_id = param_id_map['case_domain']
                 case_name_param_id = param_id_map['case_name']
+                tool_deps_id = param_id_map['suiteDependencySet']
                 
                 testline_param = test_line.Parameters
                 testline_param = self.nga_handler.add_to_params(testline_param, case_identifier_param_id, case_id, self.logger)
                 testline_param = self.nga_handler.add_to_params(testline_param, case_domain_param_id, domain, self.logger)
                 testline_param = self.nga_handler.add_to_params(testline_param, case_name_param_id, title, self.logger)
-                
+                testline_param = self.nga_handler.add_to_params(testline_param, tool_deps_id, str(tooldeps), self.logger)
+
                 self.logger.info(f"After update - Parameters: {test_line.Parameters}")
                 self.logger.info(f"Updating test line for case ID: {case_id}")
                 
@@ -222,7 +240,7 @@ class TestLineUpdater:
                 self.logger.warning(f"No test line found for case ID: {case_id}")
 
 
-def main():
+def main(suite_id):
     # Initialize logger
     logger_instance = Logger()
     logger = logger_instance.logger
@@ -242,14 +260,15 @@ def main():
     nga_handler = NGAApiHandler(creds, logger_instance)
     
     # Get test lines and create mapping
-    suite_id = "67ba941a-038f-4de1-a859-9e5607ba88c5"
+    
     suite_test_lines = nga_handler.get_test_lines_by_suite(suite_id)
     suite_test_line_mapping = nga_handler.create_test_line_mapping(suite_test_lines)
     
     # Get parameter IDs
-    params = ('case_identifier', 'case_domain', 'case_name')
+    params = ('case_identifier', 'case_domain', 'case_name', 'suiteDependencySet')
     param_id_map = nga_handler.get_parameter_ids(params)
-    
+    print(param_id_map)
+    # exit()
     # Update test lines with case metadata
     updater = TestLineUpdater(nga_handler, logger_instance)
     updater.update_test_lines(rails_cases, suite_test_line_mapping, param_id_map)
@@ -258,8 +277,17 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    """
+    This scipt will sync ('case_identifier', 'case_domain', 'case_name', 'suiteDependencySet')
+    Between the Python File in Rails and the Test Line in NGA
+    """
 
+    suite_id = "03943265-16bb-4f4c-9304-7b534050211b"
+    main(suite_id=suite_id)
+    
+    # tool_dep_handler = InspectToolDependency(scanModuleName='rails.nga_cases', logger=Logger())
+    # tool_dep_handler.discoverCases()
+    # deps = tool_dep_handler.getToolDependenciesFromCaseId("HSD_2007321350")
 # """
 # Suite = ad85bc7b-fe77-42ba-b301-06eb4e9cc6fe
 # Test Line = b7f5a5c1-31e0-426b-bbe9-16017bf1f628
