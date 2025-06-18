@@ -278,8 +278,13 @@ def main(suite_id):
 
 if __name__ == "__main__":
     """
-    This scipt will sync ('case_identifier', 'case_domain', 'case_name', 'suiteDependencySet')
-    Between the Python File in Rails and the Test Line in NGA
+    This scipt will sync ('case_identifier', 'case_domain', 'case_name', 'suiteDependencySet'),
+    between the Python File in Rails and the Test Line in NGA
+
+    How to use?
+    1) copy this file to rails repo root
+    2) Update suite id below
+    3) run - python metadata-updater-nga.py
     """
 
     suite_id = "03943265-16bb-4f4c-9304-7b534050211b"
