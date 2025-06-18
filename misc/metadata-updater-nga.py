@@ -293,7 +293,3 @@ if __name__ == "__main__":
     # tool_dep_handler = InspectToolDependency(scanModuleName='rails.nga_cases', logger=Logger())
     # tool_dep_handler.discoverCases()
     # deps = tool_dep_handler.getToolDependenciesFromCaseId("HSD_2007321350")
-# """
-# Suite = ad85bc7b-fe77-42ba-b301-06eb4e9cc6fe
-# Test Line = b7f5a5c1-31e0-426b-bbe9-16017bf1f628
-# """
