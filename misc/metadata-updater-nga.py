@@ -5,6 +5,7 @@ from datetime import datetime
 from termcolor import colored, cprint
 
 from ngaapi.NgaDataClasses.ResponseTestLine import Parameter, TestDetails
+from ngaapi.NgaDataClasses.ResponseTestStep import ResponseTestStep
 from ngaapi.RestApi import Credentials, RestInterface
 
 from suite_definition.tws.aggregators import ClassDependencyAggregator
@@ -12,6 +13,9 @@ from suite_definition.tcdef_suite_generator import TcdefSuiteGenerator
 from rails_core.integration.tws.CustomCaseBuilder import CustomCaseBuilder
 from suite_definition.metadata.discovery import MetadataDiscovery
 from suite_definition.decorators import CaseMetaDataDecorator
+from dataclasses import asdict, dataclass
+from typing import List, Optional
+import json
 
 SERVICE_NAME = "ngaapi"
 
@@ -118,8 +122,6 @@ class InspectToolDependency:
         toolDeps, _ = self.aggregateDependencies(className)
         self.logger.success(f"Found {len(toolDeps)} tool dependencies")
         return toolDeps
-
-
 
 
 class NGAApiHandler:
@@ -239,6 +241,58 @@ class TestLineUpdater:
             else:
                 self.logger.warning(f"No test line found for case ID: {case_id}")
 
+    def enable_stdout_teststeps(self, test_line_mapping):
+        api:RestInterface = self.nga_handler.api
+        
+        for name, test_line in test_line_mapping.items():
+            test_line: TestDetails
+            print("######")
+            print(f"Updating stdout steps for testline id {test_line.Id}/{test_line.GoalName}")
+            test_line = api.get_test_line_details(test_line.Id)
+            teststeps = test_line.TestStepIds
+            # Remove duplicates from teststeps while preserving order
+            teststeps = list(dict.fromkeys(teststeps))
+            print(f"Processing {len(teststeps)} unique test steps")
+            import concurrent.futures
+
+            def process_test_step(api, teststep):
+                test_step_obj = api.get_test_step_by_id(teststep)
+                if test_step_obj:
+                    test_step_obj: ResponseTestStep
+                    test_step_obj.CollectStepLogs = True
+                    api.update_test_step(test_step_obj)
+                    return f"Updated test step: {teststep}"
+                return f"Failed to get test step: {teststep}"
+
+            # Using ThreadPoolExecutor to process test steps concurrently
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                futures = [executor.submit(process_test_step, api, teststep) for teststep in teststeps]
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        result = future.result()
+                        print(result)
+                    except Exception as exc:
+                        print(f"Test step processing generated an exception: {exc}")
+            print("######")
+
+def update_stdout_steps(suiteid):
+    logger_instance = Logger()
+    logger = logger_instance.logger
+    
+    # Initialize credential manager and get credentials
+    logger_instance.highlight("Starting stdout bulk update process")
+    cred_manager = CredentialManager(SERVICE_NAME, logger_instance)
+    client_secret = cred_manager.get_credential("client_secret")
+    client_id = cred_manager.get_credential("client_id")
+    creds = Credentials(client_secret=client_secret, client_id=client_id)
+    nga_handler = NGAApiHandler(creds, logger_instance)
+
+    testlines = nga_handler.get_test_lines_by_suite(suite_id=suiteid)
+    suite_test_line_mapping = nga_handler.create_test_line_mapping(testlines)
+
+    updater = TestLineUpdater(nga_handler, logger_instance)
+    updater.enable_stdout_teststeps(suite_test_line_mapping)
+
 
 def main(suite_id):
     # Initialize logger
@@ -288,8 +342,19 @@ if __name__ == "__main__":
     """
 
     suite_id = "03943265-16bb-4f4c-9304-7b534050211b"
-    main(suite_id=suite_id)
+    # main(suite_id=suite_id)
+
+    update_stdout_steps(suite_id)
     
     # tool_dep_handler = InspectToolDependency(scanModuleName='rails.nga_cases', logger=Logger())
     # tool_dep_handler.discoverCases()
     # deps = tool_dep_handler.getToolDependenciesFromCaseId("HSD_2007321350")
+    # cred_manager = CredentialManager(SERVICE_NAME, Logger())
+    # client_secret = cred_manager.get_credential("client_secret")
+    # client_id = cred_manager.get_credential("client_id")
+    # creds = Credentials(client_secret=client_secret, client_id=client_id)
+    # a = RestInterface(creds)
+    # ts = a.get_test_step_by_id("6649bcc6-9766-4db5-93dd-1596dc737708")
+    # print(ts)
+    # ts.CollectStepLogs = True
+    # a.update_test_step(ts)
