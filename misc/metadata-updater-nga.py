@@ -258,8 +258,11 @@ class TestLineUpdater:
             def process_test_step(api, teststep):
                 test_step_obj = api.get_test_step_by_id(teststep)
                 if test_step_obj:
+                    if test_step_obj.CollectStepLogs is True:
+                        return f"Already updated: {teststep}"
                     test_step_obj: ResponseTestStep
                     test_step_obj.CollectStepLogs = True
+                    
                     api.update_test_step(test_step_obj)
                     return f"Updated test step: {teststep}"
                 return f"Failed to get test step: {teststep}"
@@ -329,6 +332,26 @@ def main(suite_id):
     
     logger_instance.highlight("Process completed successfully")
 
+def disableStream(suiteid):
+    logger_instance = Logger()
+    logger = logger_instance.logger
+    
+    # Initialize credential manager and get credentials
+    logger_instance.highlight("Starting stdout bulk update process")
+    cred_manager = CredentialManager(SERVICE_NAME, logger_instance)
+    client_secret = cred_manager.get_credential("client_secret")
+    client_id = cred_manager.get_credential("client_id")
+    creds = Credentials(client_secret=client_secret, client_id=client_id)
+    nga_handler = NGAApiHandler(creds, logger_instance)
+
+    testlines = nga_handler.get_test_lines_by_suite(suite_id=suiteid)
+    suite_test_line_mapping = nga_handler.create_test_line_mapping(testlines)
+
+    for goal, testline in suite_test_line_mapping.items():
+        if testline.StreamTestLogs is False:
+            continue
+        testline.StreamTestLogs = False
+        nga_handler.update_testline(testline)
 
 if __name__ == "__main__":
     """
@@ -344,7 +367,7 @@ if __name__ == "__main__":
     suite_id = "03943265-16bb-4f4c-9304-7b534050211b"
     # main(suite_id=suite_id)
 
-    update_stdout_steps(suite_id)
+    disableStream(suite_id)
     
     # tool_dep_handler = InspectToolDependency(scanModuleName='rails.nga_cases', logger=Logger())
     # tool_dep_handler.discoverCases()
