@@ -16,6 +16,7 @@ from suite_definition.decorators import CaseMetaDataDecorator
 from dataclasses import asdict, dataclass
 from typing import List, Optional
 import json
+import time
 
 SERVICE_NAME = "ngaapi"
 
@@ -241,7 +242,7 @@ class TestLineUpdater:
             else:
                 self.logger.warning(f"No test line found for case ID: {case_id}")
 
-    def enable_stdout_teststeps(self, test_line_mapping):
+    def enable_stdout_TS_disable_stream_TL(self, test_line_mapping):
         api:RestInterface = self.nga_handler.api
         
         for name, test_line in test_line_mapping.items():
@@ -254,7 +255,8 @@ class TestLineUpdater:
             teststeps = list(dict.fromkeys(teststeps))
             print(f"Processing {len(teststeps)} unique test steps")
             import concurrent.futures
-
+            if test_line.StreamTestLogs is True:
+                test_line.StreamTestLogs = False
             def process_test_step(api, teststep):
                 test_step_obj = api.get_test_step_by_id(teststep)
                 if test_step_obj:
@@ -278,7 +280,7 @@ class TestLineUpdater:
                         print(f"Test step processing generated an exception: {exc}")
             print("######")
 
-def update_stdout_steps(suiteid):
+def enable_stdout_TS_disable_stream_TL(suiteid):
     logger_instance = Logger()
     logger = logger_instance.logger
     
@@ -294,7 +296,7 @@ def update_stdout_steps(suiteid):
     suite_test_line_mapping = nga_handler.create_test_line_mapping(testlines)
 
     updater = TestLineUpdater(nga_handler, logger_instance)
-    updater.enable_stdout_teststeps(suite_test_line_mapping)
+    updater.enable_stdout_TS_disable_stream_TL(suite_test_line_mapping)
 
 
 def main(suite_id):
@@ -364,10 +366,18 @@ if __name__ == "__main__":
     3) run - python metadata-updater-nga.py
     """
 
-    suite_id = "03943265-16bb-4f4c-9304-7b534050211b"
+    suite_id = "9080eb92-61d3-4a80-95fc-d2696c560590"
     # main(suite_id=suite_id)
 
-    disableStream(suite_id)
+    start_time = time.time()
+    print(f"Starting at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    enable_stdout_TS_disable_stream_TL(suite_id)
+    
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(f"Completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Total time taken: {total_time:.2f} seconds")
     
     # tool_dep_handler = InspectToolDependency(scanModuleName='rails.nga_cases', logger=Logger())
     # tool_dep_handler.discoverCases()
